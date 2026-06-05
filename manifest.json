@@ -2,7 +2,7 @@
   "name": "Çalışma Takip",
   "short_name": "İş Takip",
   "description": "Çalıştığın günleri takip et, istatistik gör",
-  "start_url": "/",
+  "start_url": "/CalismaTakip/",
   "display": "standalone",
   "background_color": "#f5f4f0",
   "theme_color": "#2d5a27",
