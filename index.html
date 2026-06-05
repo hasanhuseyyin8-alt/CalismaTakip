@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Çalışma Takip</title>
+<meta name="application-name" content="İş Takip">
+<meta name="theme-color" content="#2d5a27">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="İş Takip">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f4f0;--surface:#fff;--border:#e0ddd6;--text:#1a1a18;--muted:#888880;
+  --accent:#2d5a27;--accent-light:#e8f0e6;--red:#c8401a;--red-light:#fff0ed;
+  --blue:#1a4a7a;--blue-light:#e8f0fb;--orange:#b86000;--orange-light:#fff5e8;
+  --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;
+  --safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);
+}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;
+  padding:calc(28px + var(--safe-top)) 16px calc(24px + var(--safe-bottom));
+  -webkit-tap-highlight-color:transparent}
+.container{max-width:680px;margin:0 auto}
+header{margin-bottom:32px}
+header h1{font-family:var(--mono);font-size:12px;font-weight:400;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+header .title{font-size:26px;font-weight:600;letter-spacing:-.02em}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:14px}
+.card-label{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.divider{height:1px;background:var(--border);margin:16px 0}
+
+/* Stats */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.stat-box{background:var(--bg);border-radius:8px;padding:12px 6px;text-align:center}
+.stat-box .num{font-family:var(--mono);font-size:20px;font-weight:500;color:var(--accent);display:block;line-height:1;margin-bottom:3px}
+.stat-box .num.red{color:var(--red)}
+.stat-box .num.blue{color:var(--blue)}
+.stat-box .lbl{font-size:10px;color:var(--muted)}
+
+/* Buttons */
+.btn{font-family:var(--sans);font-size:13px;font-weight:500;padding:9px 16px;border-radius:8px;border:none;cursor:pointer;transition:opacity .15s,transform .1s;white-space:nowrap}
+.btn:active{transform:scale(.96)}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{opacity:.88}
+.btn-secondary{background:var(--bg);color:var(--text);border:1.5px solid var(--border)}
+.btn-danger{background:var(--red-light);color:var(--red);border:1.5px solid #f5c4ba}
+.btn-sm{padding:6px 12px;font-size:12px}
+
+/* Today */
+.today-section{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.today-info{font-size:13px;color:var(--muted)}
+.today-info strong{color:var(--text);display:block;font-size:15px;margin-bottom:2px}
+.worked-toggle{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+.toggle-track{width:42px;height:24px;background:var(--border);border-radius:100px;position:relative;transition:background .2s;flex-shrink:0}
+.toggle-track.on{background:var(--accent)}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.toggle-track.on .toggle-thumb{transform:translateX(18px)}
+.toggle-label{font-size:13px;font-weight:500}
+
+/* Duration */
+.duration-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.duration-inputs{display:flex;gap:6px;align-items:center}
+.dur-field{display:flex;flex-direction:column;align-items:center;gap:3px}
+.dur-field label{font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.dur-input{font-family:var(--mono);font-size:18px;font-weight:500;width:56px;text-align:center;border:1.5px solid var(--border);border-radius:8px;padding:7px 4px;background:var(--bg);color:var(--text);outline:none;transition:border-color .15s}
+.dur-input:focus{border-color:var(--accent)}
+.dur-sep{font-family:var(--mono);font-size:18px;color:var(--muted);padding-bottom:8px}
+
+/* Alarm */
+.alarm-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.time-input{font-family:var(--mono);font-size:20px;font-weight:500;border:1.5px solid var(--border);border-radius:8px;padding:7px 12px;background:var(--bg);color:var(--text);outline:none;transition:border-color .15s}
+.time-input:focus{border-color:var(--accent)}
+.alarm-status{font-family:var(--mono);font-size:11px;padding:5px 9px;background:var(--accent-light);border-radius:6px;border:1px solid #c6ddc2;display:none;color:var(--accent)}
+.alarm-status.active{display:inline-block}
+
+/* Calendar */
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.cal-month{font-weight:600;font-size:15px}
+.cal-nav{display:flex;gap:5px}
+.cal-nav button{background:var(--bg);border:1.5px solid var(--border);border-radius:6px;width:28px;height:28px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text);transition:border-color .15s}
+.cal-nav button:hover{border-color:#aaa}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-day-name{text-align:center;font-family:var(--mono);font-size:10px;color:var(--muted);padding-bottom:6px}
+.cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:6px;font-size:12px;cursor:pointer;border:1.5px solid transparent;transition:background .12s,border-color .12s;position:relative;gap:2px}
+.cal-day:hover{background:var(--bg)}
+.cal-day.empty{cursor:default;pointer-events:none}
+.cal-day .day-num{line-height:1}
+.cal-day .day-dot{width:5px;height:5px;border-radius:50%;opacity:0}
+
+/* Day type colors */
+.cal-day.type-work{background:var(--accent-light);color:var(--accent);font-weight:600;border-color:#c6ddc2}
+.cal-day.type-work .day-dot{background:var(--accent);opacity:1}
+.cal-day.type-leave{background:var(--blue-light);color:var(--blue);font-weight:600;border-color:#b8d0f0}
+.cal-day.type-leave .day-dot{background:var(--blue);opacity:1}
+.cal-day.type-sick{background:var(--red-light);color:var(--red);font-weight:600;border-color:#f5c4ba}
+.cal-day.type-sick .day-dot{background:var(--red);opacity:1}
+.cal-day.type-holiday{background:var(--orange-light);color:var(--orange);font-weight:600;border-color:#f5d8a0}
+.cal-day.type-holiday .day-dot{background:var(--orange);opacity:1}
+
+.cal-day.today{border-color:var(--accent)!important;font-weight:700}
+.cal-day.today:not([class*="type-"]){border-color:var(--accent)}
+.cal-day.weekend .day-num{color:#bbb}
+.cal-day.weekend.type-work .day-num,.cal-day.weekend.type-leave .day-num,
+.cal-day.weekend.type-sick .day-num,.cal-day.weekend.type-holiday .day-num{color:inherit}
+
+/* Legend */
+.cal-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* Log */
+.log-list{list-style:none;display:flex;flex-direction:column;gap:6px}
+.log-item{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--bg);border-radius:8px;font-size:12px;gap:8px}
+.log-date{font-family:var(--mono);font-weight:500;flex:1;min-width:0}
+.log-type-badge{font-size:10px;padding:2px 7px;border-radius:100px;font-weight:500;white-space:nowrap;flex-shrink:0}
+.badge-work{background:var(--accent-light);color:var(--accent)}
+.badge-leave{background:var(--blue-light);color:var(--blue)}
+.badge-sick{background:var(--red-light);color:var(--red)}
+.badge-holiday{background:var(--orange-light);color:var(--orange)}
+.log-dur{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
+.log-edit{background:none;border:none;color:#ccc;cursor:pointer;font-size:15px;padding:0 2px;transition:color .15s;flex-shrink:0}
+.log-edit:hover{color:var(--accent)}
+.log-del{background:none;border:none;color:#ccc;cursor:pointer;font-size:17px;padding:0 2px;transition:color .15s;flex-shrink:0}
+.log-del:hover{color:var(--red)}
+.empty-msg{text-align:center;color:var(--muted);font-size:12px;padding:18px 0;font-family:var(--mono)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;display:none;align-items:flex-end;justify-content:center;padding:0}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:18px 18px 0 0;width:100%;max-width:520px;padding:0 0 calc(24px + var(--safe-bottom));animation:slideUp .25s ease;max-height:92vh;overflow-y:auto}
+@media(min-width:540px){
+  .modal-overlay{align-items:center;padding:16px}
+  .modal{border-radius:16px;max-height:80vh}
+}
+@keyframes slideUp{from{transform:translateY(32px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 0}
+.modal-title{font-size:16px;font-weight:600}
+.modal-date{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:2px}
+.modal-close{background:none;border:none;font-size:22px;color:var(--muted);cursor:pointer;line-height:1;padding:0 4px}
+.modal-body{padding:16px 20px 0}
+
+/* Type selector */
+.type-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px}
+.type-btn{padding:10px 8px;border-radius:10px;border:2px solid var(--border);background:var(--bg);cursor:pointer;text-align:center;transition:all .15s;font-family:var(--sans)}
+.type-btn .type-icon{font-size:20px;display:block;margin-bottom:4px}
+.type-btn .type-label{font-size:12px;font-weight:500;color:var(--text)}
+.type-btn.selected-work{border-color:var(--accent);background:var(--accent-light)}
+.type-btn.selected-leave{border-color:var(--blue);background:var(--blue-light)}
+.type-btn.selected-sick{border-color:var(--red);background:var(--red-light)}
+.type-btn.selected-holiday{border-color:var(--orange);background:var(--orange-light)}
+
+.modal-field{margin-bottom:14px}
+.modal-field label{font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:6px}
+.modal-note{width:100%;border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:var(--sans);font-size:13px;color:var(--text);background:var(--bg);outline:none;resize:none;transition:border-color .15s}
+.modal-note:focus{border-color:var(--accent)}
+.modal-actions{display:flex;gap:8px;padding:16px 20px 0;flex-wrap:wrap}
+.modal-actions .btn{flex:1;text-align:center}
+
+/* duration row in modal */
+.modal-dur-row{display:flex;gap:8px;align-items:center}
+.modal-dur-row .dur-input{width:52px;font-size:16px;padding:6px 4px}
+.modal-dur-row .dur-sep{font-size:16px;padding-bottom:0}
+
+/* Install banner */
+#install-banner{background:#fffbea;border:1px solid #e8d87a;border-radius:10px;padding:12px 14px;margin-bottom:14px;display:none;font-size:12px;color:#6b5900;align-items:center;gap:10px}
+#install-banner.show{display:flex}
+#install-banner .install-text{flex:1}
+#install-banner .install-text strong{display:block;margin-bottom:1px;font-size:13px}
+
+/* Notification */
+#notif-banner{position:fixed;bottom:calc(20px + var(--safe-bottom));right:16px;left:16px;max-width:360px;margin:0 auto;background:var(--accent);color:#fff;padding:12px 16px;border-radius:12px;font-size:13px;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,.15);display:none;z-index:200;animation:slideUp .3s ease}
+#notif-banner.show{display:block}
+
+@media(max-width:380px){
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .cal-day{font-size:11px}
+  .type-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>İş Takip</h1>
+    <div class="title">Çalışma Defteri</div>
+  </header>
+
+  <div id="install-banner">
+    <div class="install-text">
+      <strong>📱 Ana Ekrana Ekle</strong>
+      Uygulamayı ana ekrana ekle, her zaman hızlı aç.
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="installPWA()">Ekle</button>
+  </div>
+
+  <!-- Stats -->
+  <div class="card">
+    <div class="card-label">Bu Ay</div>
+    <div class="stats-row">
+      <div class="stat-box">
+        <span class="num" id="stat-days">0</span>
+        <span class="lbl">Çalışma</span>
+      </div>
+      <div class="stat-box">
+        <span class="num blue" id="stat-leave">0</span>
+        <span class="lbl">İzin</span>
+      </div>
+      <div class="stat-box">
+        <span class="num red" id="stat-sick">0</span>
+        <span class="lbl">Hastalık</span>
+      </div>
+      <div class="stat-box">
+        <span class="num" id="stat-hours">—</span>
+        <span class="lbl">Toplam</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Today -->
+  <div class="card">
+    <div class="card-label">Bugün</div>
+    <div class="today-section">
+      <div class="today-info">
+        <strong id="today-date"></strong>
+        <span id="today-status-text">Henüz işaretlenmedi</span>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="openModal(todayKey())">Düzenle</button>
+    </div>
+    <div class="divider"></div>
+    <div class="duration-row">
+      <div class="duration-inputs">
+        <div class="dur-field">
+          <label>Saat</label>
+          <input type="number" class="dur-input" id="dur-h" min="0" max="24" value="8">
+        </div>
+        <div class="dur-sep">:</div>
+        <div class="dur-field">
+          <label>Dakika</label>
+          <input type="number" class="dur-input" id="dur-m" min="0" max="59" value="0">
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="quickSaveToday()">Bugünü Kaydet</button>
+    </div>
+  </div>
+
+  <!-- Alarm -->
+  <div class="card">
+    <div class="card-label">İş Çıkış Bildirimi</div>
+    <div class="alarm-row">
+      <input type="time" class="time-input" id="alarm-time" value="18:00">
+      <button class="btn btn-primary" onclick="setAlarm()">Kur</button>
+      <button class="btn btn-danger btn-sm" onclick="clearAlarm()" id="clear-alarm-btn" style="display:none">İptal</button>
+      <span class="alarm-status" id="alarm-status"></span>
+    </div>
+  </div>
+
+  <!-- Calendar -->
+  <div class="card">
+    <div class="cal-header">
+      <div class="cal-month" id="cal-month"></div>
+      <div class="cal-nav">
+        <button onclick="changeMonth(-1)">‹</button>
+        <button onclick="changeMonth(1)">›</button>
+      </div>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="cal-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>Çalışma</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>İzin</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Hastalık</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div>Resmi Tatil</div>
+    </div>
+  </div>
+
+  <!-- Log -->
+  <div class="card">
+    <div class="card-label">Kayıtlar</div>
+    <ul class="log-list" id="log-list"></ul>
+  </div>
+
+</div>
+
+<!-- DAY MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modal-title">Gün Düzenle</div>
+        <div class="modal-date" id="modal-date"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="modal-field">
+        <label>Gün Türü</label>
+        <div class="type-grid">
+          <button class="type-btn" id="type-work" onclick="selectType('work')">
+            <span class="type-icon">💼</span>
+            <span class="type-label">Çalıştım</span>
+          </button>
+          <button class="type-btn" id="type-leave" onclick="selectType('leave')">
+            <span class="type-icon">🏖️</span>
+            <span class="type-label">İzin</span>
+          </button>
+          <button class="type-btn" id="type-sick" onclick="selectType('sick')">
+            <span class="type-icon">🤒</span>
+            <span class="type-label">Hastalık</span>
+          </button>
+          <button class="type-btn" id="type-holiday" onclick="selectType('holiday')">
+            <span class="type-icon">🎉</span>
+            <span class="type-label">Resmi Tatil</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-field" id="modal-dur-field">
+        <label>Çalışma Süresi</label>
+        <div class="modal-dur-row">
+          <div class="dur-field">
+            <label>Saat</label>
+            <input type="number" class="dur-input" id="modal-h" min="0" max="24" value="8">
+          </div>
+          <div class="dur-sep">:</div>
+          <div class="dur-field">
+            <label>Dakika</label>
+            <input type="number" class="dur-input" id="modal-m" min="0" max="59" value="0">
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-field">
+        <label>Not (isteğe bağlı)</label>
+        <textarea class="modal-note" id="modal-note" rows="2" placeholder="Örn: Fazla mesai yaptım, toplantı vardı..."></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-primary" onclick="saveModal()">Kaydet</button>
+        <button class="btn btn-danger" id="modal-del-btn" onclick="deleteModal()" style="display:none">Kaydı Sil</button>
+        <button class="btn btn-secondary" onclick="closeModal()">İptal</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="notif-banner"></div>
+
+<script>
+// --- State ---
+let days = JSON.parse(localStorage.getItem('workDays2') || '{}');
+// { "2026-06-04": { type:"work"|"leave"|"sick"|"holiday", duration:480, note:"" } }
+
+let alarmTime = localStorage.getItem('alarmTime') || null;
+let alarmInterval = null;
+let calViewDate = new Date();
+let modalKey = null;
+let selectedType = 'work';
+let deferredInstallPrompt = null;
+
+const MONTHS_TR = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+const TYPE_LABELS = { work:'Çalışma', leave:'İzin', sick:'Hastalık', holiday:'Resmi Tatil' };
+
+function toKey(d) { return d.toISOString().slice(0,10); }
+function todayKey() { return toKey(new Date()); }
+function save() { localStorage.setItem('workDays2', JSON.stringify(days)); }
+
+// --- Stats ---
+function renderStats() {
+  const now = new Date();
+  const prefix = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const monthKeys = Object.keys(days).filter(k => k.startsWith(prefix));
+  const workKeys = monthKeys.filter(k => days[k].type === 'work');
+  const leaveKeys = monthKeys.filter(k => days[k].type === 'leave');
+  const sickKeys = monthKeys.filter(k => days[k].type === 'sick');
+  const totalMin = workKeys.reduce((s,k) => s + (days[k].duration||0), 0);
+  document.getElementById('stat-days').textContent = workKeys.length;
+  document.getElementById('stat-leave').textContent = leaveKeys.length;
+  document.getElementById('stat-sick').textContent = sickKeys.length;
+  document.getElementById('stat-hours').textContent = totalMin > 0 ? fmtHours(totalMin) : '—';
+}
+
+function fmtHours(min) {
+  const h = Math.floor(min/60), m = min%60;
+  if (h === 0) return m+'dk';
+  return h+'s'+(m>0?m+'dk':'');
+}
+
+// --- Today ---
+function initToday() {
+  const d = new Date();
+  const opts = { weekday:'long', day:'numeric', month:'long', year:'numeric' };
+  document.getElementById('today-date').textContent = d.toLocaleDateString('tr-TR', opts);
+  updateTodayStatus();
+}
+
+function updateTodayStatus() {
+  const key = todayKey();
+  const entry = days[key];
+  const el = document.getElementById('today-status-text');
+  if (!entry) {
+    el.textContent = 'Henüz işaretlenmedi';
+  } else if (entry.type === 'work') {
+    el.textContent = entry.duration > 0 ? `Çalışma · ${fmtHours(entry.duration)}` : 'Çalışma günü';
+  } else {
+    el.textContent = TYPE_LABELS[entry.type];
+  }
+}
+
+function quickSaveToday() {
+  const key = todayKey();
+  const h = parseInt(document.getElementById('dur-h').value)||0;
+  const m = parseInt(document.getElementById('dur-m').value)||0;
+  const note = days[key]?.note || '';
+  days[key] = { type:'work', duration: h*60+m, note };
+  save(); updateTodayStatus(); renderStats(); renderCalendar(); renderLog();
+  showBanner(`${fmtHours(h*60+m)} kaydedildi ✓`);
+}
+
+// --- Calendar ---
+function renderCalendar() {
+  const yr = calViewDate.getFullYear();
+  const mo = calViewDate.getMonth();
+  document.getElementById('cal-month').textContent = `${MONTHS_TR[mo]} ${yr}`;
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+
+  ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'cal-day-name';
+    el.textContent = d;
+    grid.appendChild(el);
+  });
+
+  const firstDay = new Date(yr, mo, 1);
+  const startDow = (firstDay.getDay() + 6) % 7;
+  const daysInMonth = new Date(yr, mo+1, 0).getDate();
+  const todayStr = todayKey();
+
+  for (let i = 0; i < startDow; i++) {
+    const el = document.createElement('div');
+    el.className = 'cal-day empty';
+    grid.appendChild(el);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(yr, mo, d);
+    const key = toKey(date);
+    const dow = (date.getDay() + 6) % 7;
+    const entry = days[key];
+    const el = document.createElement('div');
+    el.className = 'cal-day';
+    if (dow >= 5) el.classList.add('weekend');
+    if (entry) el.classList.add('type-' + entry.type);
+    if (key === todayStr) el.classList.add('today');
+
+    const numEl = document.createElement('div');
+    numEl.className = 'day-num';
+    numEl.textContent = d;
+    const dotEl = document.createElement('div');
+    dotEl.className = 'day-dot';
+    el.appendChild(numEl);
+    el.appendChild(dotEl);
+
+    if (entry) el.title = TYPE_LABELS[entry.type] + (entry.duration ? ` · ${fmtHours(entry.duration)}` : '') + (entry.note ? `\n${entry.note}` : '');
+    el.onclick = () => openModal(key);
+    grid.appendChild(el);
+  }
+}
+
+function changeMonth(dir) {
+  calViewDate.setMonth(calViewDate.getMonth() + dir);
+  renderCalendar();
+}
+
+// --- Log ---
+function renderLog() {
+  const list = document.getElementById('log-list');
+  const keys = Object.keys(days).sort((a,b) => b.localeCompare(a));
+  if (keys.length === 0) {
+    list.innerHTML = '<div class="empty-msg">Henüz kayıt yok</div>';
+    return;
+  }
+  list.innerHTML = '';
+  keys.slice(0, 60).forEach(key => {
+    const d = new Date(key + 'T00:00:00');
+    const label = d.toLocaleDateString('tr-TR', { weekday:'short', day:'numeric', month:'short' });
+    const entry = days[key];
+    const badgeClass = `badge-${entry.type}`;
+    const li = document.createElement('li');
+    li.className = 'log-item';
+    li.innerHTML = `
+      <span class="log-date">${label}</span>
+      <span class="log-type-badge ${badgeClass}">${TYPE_LABELS[entry.type]}</span>
+      <span class="log-dur">${entry.duration > 0 ? fmtHours(entry.duration) : ''}</span>
+      <button class="log-edit" onclick="openModal('${key}')" title="Düzenle">✎</button>
+      <button class="log-del" onclick="deleteEntry('${key}')" title="Sil">×</button>
+    `;
+    list.appendChild(li);
+  });
+}
+
+function deleteEntry(key) {
+  delete days[key];
+  save(); renderStats(); renderCalendar(); renderLog();
+  if (key === todayKey()) updateTodayStatus();
+  showBanner('Kayıt silindi');
+}
+
+// --- Modal ---
+function openModal(key) {
+  modalKey = key;
+  const date = new Date(key + 'T00:00:00');
+  const label = date.toLocaleDateString('tr-TR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  document.getElementById('modal-date').textContent = label;
+
+  const entry = days[key];
+  if (entry) {
+    selectType(entry.type);
+    const h = Math.floor((entry.duration||0)/60);
+    const m = (entry.duration||0) % 60;
+    document.getElementById('modal-h').value = h;
+    document.getElementById('modal-m').value = m;
+    document.getElementById('modal-note').value = entry.note || '';
+    document.getElementById('modal-del-btn').style.display = 'inline-flex';
+    document.getElementById('modal-title').textContent = 'Günü Düzenle';
+  } else {
+    selectType('work');
+    document.getElementById('modal-h').value = 8;
+    document.getElementById('modal-m').value = 0;
+    document.getElementById('modal-note').value = '';
+    document.getElementById('modal-del-btn').style.display = 'none';
+    document.getElementById('modal-title').textContent = 'Gün Ekle';
+  }
+
+  document.getElementById('modal-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+  modalKey = null;
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+}
+
+function selectType(type) {
+  selectedType = type;
+  ['work','leave','sick','holiday'].forEach(t => {
+    const btn = document.getElementById('type-' + t);
+    btn.className = 'type-btn';
+    if (t === type) btn.classList.add('selected-' + t);
+  });
+  // Show duration only for work
+  document.getElementById('modal-dur-field').style.display = type === 'work' ? '' : 'none';
+}
+
+function saveModal() {
+  if (!modalKey) return;
+  const h = parseInt(document.getElementById('modal-h').value)||0;
+  const m = parseInt(document.getElementById('modal-m').value)||0;
+  const note = document.getElementById('modal-note').value.trim();
+  days[modalKey] = {
+    type: selectedType,
+    duration: selectedType === 'work' ? h*60+m : 0,
+    note
+  };
+  save(); renderStats(); renderCalendar(); renderLog();
+  if (modalKey === todayKey()) updateTodayStatus();
+  closeModal();
+  showBanner(TYPE_LABELS[selectedType] + ' kaydedildi ✓');
+}
+
+function deleteModal() {
+  if (!modalKey) return;
+  const key = modalKey;
+  closeModal();
+  deleteEntry(key);
+}
+
+// --- Alarm ---
+function setAlarm() {
+  const val = document.getElementById('alarm-time').value;
+  if (!val) return;
+  alarmTime = val;
+  localStorage.setItem('alarmTime', val);
+  startAlarmCheck();
+  showAlarmStatus(val);
+  showBanner(`Hatırlatıcı kuruldu: ${val} 🔔`);
+}
+
+function clearAlarm() {
+  alarmTime = null;
+  localStorage.removeItem('alarmTime');
+  if (alarmInterval) clearInterval(alarmInterval);
+  alarmInterval = null;
+  document.getElementById('alarm-status').classList.remove('active');
+  document.getElementById('clear-alarm-btn').style.display = 'none';
+}
+
+function showAlarmStatus(val) {
+  const el = document.getElementById('alarm-status');
+  el.textContent = `⏰ ${val} aktif`;
+  el.classList.add('active');
+  document.getElementById('clear-alarm-btn').style.display = 'inline-flex';
+}
+
+function startAlarmCheck() {
+  if (alarmInterval) clearInterval(alarmInterval);
+  let lastFired = localStorage.getItem('alarmLastFired') || '';
+  alarmInterval = setInterval(() => {
+    if (!alarmTime) return;
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2,'0');
+    const mm = String(now.getMinutes()).padStart(2,'0');
+    const todayStr = now.toISOString().slice(0,10);
+    if (`${hh}:${mm}` === alarmTime && lastFired !== todayStr) {
+      lastFired = todayStr;
+      localStorage.setItem('alarmLastFired', todayStr);
+      fireAlarm();
+    }
+  }, 10000);
+}
+
+function fireAlarm() {
+  showBanner('🔔 İş çıkışı saati! Bugünü işaretlemeyi unutma.');
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification('İş Takip', { body: 'Bugünü işaretlemeyi unutma!', icon: 'icon-192.png' });
+  }
+}
+
+// --- Banner ---
+let bannerTimer;
+function showBanner(msg) {
+  const el = document.getElementById('notif-banner');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(bannerTimer);
+  bannerTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// --- PWA ---
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  document.getElementById('install-banner').classList.add('show');
+});
+window.addEventListener('appinstalled', () => {
+  document.getElementById('install-banner').classList.remove('show');
+  showBanner('Ana ekrana eklendi! 🎉');
+});
+function installPWA() {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  deferredInstallPrompt.userChoice.then(r => {
+    if (r.outcome === 'accepted') document.getElementById('install-banner').classList.remove('show');
+    deferredInstallPrompt = null;
+  });
+}
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+
+// --- Init ---
+initToday();
+renderStats();
+renderCalendar();
+renderLog();
+if (alarmTime) {
+  document.getElementById('alarm-time').value = alarmTime;
+  showAlarmStatus(alarmTime);
+  startAlarmCheck();
+}
+</script>
+</body>
+</html>
